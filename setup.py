@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(name='orchard_aws',
       url='https://github.com/Orchard-Analytics/orchard-aws',
-      packages=['orchard_aws'],
+      packages=['orchard-aws'],
       version='0.1',
       description='Orchad Analytics package for interacting with AWS.',
       author='Ryan Brennan',
