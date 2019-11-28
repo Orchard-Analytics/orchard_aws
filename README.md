@@ -1,2 +1,2 @@
-# orchard-aws
+# orchard_aws
 Orchard Analytics package for AWS
