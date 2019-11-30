@@ -1,6 +1,6 @@
 import logging
 import pandas as pd
-import string_utils
+from .string_utils import *
 
 log = logging.getLogger('SQL Generator')
 
