@@ -1,3 +1,5 @@
+from orchard_aws import *
+
 import yaml
 import os
 config_path = os.path.dirname(os.path.abspath(__file__))
