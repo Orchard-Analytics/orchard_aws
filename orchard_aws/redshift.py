@@ -6,7 +6,7 @@ import time
 import uuid
 
 from .s3 import s3
-import .sql_generator import *
+from .sql_generator import *
 
 log = logging.getLogger('Redshift Conn')
 
