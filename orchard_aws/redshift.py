@@ -12,34 +12,34 @@ log = logging.getLogger('Redshift Conn')
 
 
 class Redshift(object):
-    """
-        This class is the main driver for interacting with a redshift instance.
+    """This class is the main driver for interacting with a redshift instance.
 
-        TODO:
-            - Logger
-            - Do we need to lock tables when we upsert? See generate_lock_query()
-            - Write 'grant' permissions functions to run after upserts
-            - Create util function to clean up old S3 files
-            - Include manifest file?
+    TODO:
+        - Logger
+        - Do we need to lock tables when we upsert? See generate_lock_query()
+        - Write 'grant' permissions functions to run after upserts
+        - Create util function to clean up old S3 files
+        - Include manifest file?
 
-        Parameters
-        -------
-        credentials: dict
-            dictionary of redshift credentials:
-                {
-                    'dbname': value,
-                    'host': value,
-                    'port': value,
-                    'user': value,
-                    'password': value
-                }
-        s3_credentials: dict
-            dictionary of s3 credentials:
-                {
-                    'access_key': value,
-                    'secret_key': value,
-                    'bucket': value
-                }
+    Parameters
+    ----------
+    dbname : str
+        Name of the database.
+    host : str
+        Endpoint for database (e.g. clustername.cfsdaa7fakvgw83.us-east-1.redshift.amazonaws.com)
+    port : int
+        Endpoint port
+    user : str
+        Database username.
+    password : type
+        Password for database user.
+    access_key : str
+        S3 Access Key.
+    secret_key : str
+        Description of parameter `secret_key`.
+    s3_bucket : type
+        Name of S3 bucket.
+
     """
 
     def __init__(self, dbname, host, port, user, password, access_key=None, secret_key=None, s3_bucket=None):
@@ -57,7 +57,7 @@ class Redshift(object):
             self.conn = self.connect()
 
         if access_key is not None:
-            self.s3_conn = s3.s3(access_key=access_key, secret_key=secret_key, s3_bucket=s3_bucket)
+            self.s3_conn = s3(access_key=access_key, secret_key=secret_key, bucket=s3_bucket)
 
     def connect(self):
         """
@@ -129,7 +129,7 @@ class Redshift(object):
                        diststyle='auto',
                        primary_keys=[],
                        bucket=None,
-                       subdirectory='automated_loads',
+                       subdirectory='automated-loads',
                        encoding='utf-8',
                        keep_s3_backup=False):
         """
@@ -165,7 +165,7 @@ class Redshift(object):
 
             subdirectory: str
                 name of s3 subdirectory to store and copy files from
-                Default: 'automated_loads'
+                Default: 'automated-loads'
 
             keep_s3_backup: bool
                 By default we delete the s3 file after completing the upsert. When True, we keep the file in s3.
@@ -177,6 +177,7 @@ class Redshift(object):
         table = schema_and_table.split('.')[1]
         csv_name = '{}-{}.csv'.format(table, uuid.uuid4())
         log.info('Uploaded {} to s3 directory {}'.format(csv_name, subdirectory))
+        print(csv_name)
         key = self.s3_conn.df_to_s3(df, csv_name, bucket=bucket, subdirectory=subdirectory, encoding=encoding)
         df = None
 
@@ -186,7 +187,8 @@ class Redshift(object):
                             sortkey=sortkey,
                             columns=columns,
                             primary_keys=primary_keys,
-                            encoding=encoding)
+                            encoding=encoding,
+                            load_type=load_type)
         # delete the file
         if not keep_s3_backup:
             self.s3_conn.delete_file(key)
@@ -203,7 +205,7 @@ class Redshift(object):
                        encoding='utf-8'):
 
         if load_type == 'full-refresh':
-            drop_table_query = sql_generator.get_drop_table_query(schema_and_table)
+            drop_table_query = get_drop_table_query(schema_and_table)
             self.execute(drop_table_query)
 
         df = self.s3_conn.s3_to_df(bucket=bucket, key=key)
@@ -232,7 +234,7 @@ class Redshift(object):
         # upsert temp table into prod table
         self.upsert(source=temp_table, dest=schema_and_table, primary_keys=primary_keys)
         log.info('Dropping temp table {}'.format(temp_table))
-        drop_temp_table_query = sql_generator.get_drop_table_query(temp_table)
+        drop_temp_table_query = get_drop_table_query(temp_table)
         self.execute(drop_temp_table_query)
 
     def upsert(self, source, dest, primary_keys):
@@ -243,20 +245,20 @@ class Redshift(object):
                 2. Insert source into destination
         """
         if primary_keys:
-            delete_dest_rows_query = sql_generator.get_delete_from_dest_using_source_query(
+            delete_dest_rows_query = get_delete_from_dest_using_source_query(
                 source, dest, primary_keys)
             log.info('Deleting records from {} using: {}'.format(dest, primary_keys))
             self.execute(delete_dest_rows_query)
 
         log.info('Inserting records from {}'.format(source))
-        insert_rows_from_source_query = sql_generator.get_insert_from_source_into_dest_query(source, dest)
+        insert_rows_from_source_query = get_insert_from_source_into_dest_query(source, dest)
         self.execute(insert_rows_from_source_query)
 
     def copy_from_s3(self, schema_and_table, s3_path, extra_params, columns=''):
         """
             Executes a copy statement to load s3 into a redshift table. Note, this copies all columns by default.
         """
-        copy_query = sql_generator.get_copy_from_s3_query(schema_and_table=schema_and_table,
+        copy_query = get_copy_from_s3_query(schema_and_table=schema_and_table,
                                                           columns=columns,
                                                           s3_path=s3_path,
                                                           extra_params=extra_params)
@@ -278,11 +280,11 @@ class Redshift(object):
         temp_table = "{}__tmp".format(table)
 
         # ensure temp does not exist
-        drop_temp_table_query = sql_generator.get_drop_table_query(temp_table)
+        drop_temp_table_query = get_drop_table_query(temp_table)
         self.execute(drop_temp_table_query)
 
         # create temp staging table
-        temp_table_query = sql_generator.get_create_temp_staging_table_query(temp_table, schema_and_table)
+        temp_table_query = get_create_temp_staging_table_query(temp_table, schema_and_table)
         log.info('Creating temp staging table {}'.format(temp_table))
         self.execute(temp_table_query)
         return temp_table
@@ -295,7 +297,7 @@ class Redshift(object):
         """
         if schema_and_table is not None:
             schema, table = schema_and_table.split('.')
-        query = sql_generator.get_table_exists_query(schema, table)
+        query = get_table_exists_query(schema, table)
         resp = self.execute_and_fetch(query, return_json=True)
         return resp[0]['count'] > 0
 
@@ -304,8 +306,8 @@ class Redshift(object):
             Creates a schema if the schema does not already exist and creates an empty table based on a df.
         """
         schema = schema_and_table.split('.')[0]
-        create_schema_query = sql_generator.get_create_schema_query(schema)
-        create_table_query = sql_generator.create_table_ddl_from_df(schema_and_table,
+        create_schema_query = get_create_schema_query(schema)
+        create_table_query = create_table_ddl_from_df(schema_and_table,
                                                                     df,
                                                                     add_updated_column=add_updated_column,
                                                                     diststyle=diststyle,

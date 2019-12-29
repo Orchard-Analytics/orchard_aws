@@ -1,6 +1,8 @@
 import logging
 import pandas as pd
 from .string_utils import *
+import yaml
+from . import config
 
 log = logging.getLogger('SQL Generator')
 
@@ -19,7 +21,7 @@ def get_copy_from_s3_query(schema_and_table, columns, s3_path, extra_params=[]):
     if not extra_params:
         extra_params = ''
     else:
-        extra_params = string_utils.list_to_string(string_list=extra_params, delimiter=' ')
+        extra_params = list_to_string(string_list=extra_params, delimiter=' ')
     query = """
         copy {schema_and_table}{columns}
         from 's3://{s3_path}'
@@ -156,7 +158,7 @@ def create_table_ddl_from_df(schema_and_table, df, add_updated_column=False, dis
         add_updated_column: bool (optional)
             When true, add an __updated_at column to the create table statement
     """
-    type_map = self.get('pandas_redshift_datatypes')
+    type_map = get('pandas_redshift_datatypes')
     df = get_pandas_datatype_frame(df)
     df = add_redshift_type_column(df, type_map)
     df = add_column_ddl(df)
