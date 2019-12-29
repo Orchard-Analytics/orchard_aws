@@ -158,7 +158,7 @@ def create_table_ddl_from_df(schema_and_table, df, add_updated_column=False, dis
         add_updated_column: bool (optional)
             When true, add an __updated_at column to the create table statement
     """
-    type_map = get('pandas_redshift_datatypes')
+    type_map = self.get('pandas_redshift_datatypes')
     df = get_pandas_datatype_frame(df)
     df = add_redshift_type_column(df, type_map)
     df = add_column_ddl(df)
