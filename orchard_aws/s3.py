@@ -27,7 +27,6 @@ class s3(object):
         data = df.to_csv(index=False, encoding=encoding)
         try:
             key = self.csv_to_s3(data, obj_name, bucket, subdirectory, gzip)
-            raise Exception('Test Exception')
             return key
         except Exception:
             log.error('error sending {0} to {1}/{2}'.format(obj_name, bucket, subdirectory))
@@ -83,7 +82,5 @@ class s3(object):
     def delete_file(self, key, bucket=None):
         if bucket is None:
             bucket = self.bucket
-
         self.client.delete_object(Bucket=bucket, Key=key)
-
         return "Deleted {} from s3 bucket {}".format(key, bucket)

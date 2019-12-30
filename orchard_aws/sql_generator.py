@@ -78,7 +78,7 @@ def get_create_schema_query(schema):
 
 def get_drop_table_query(schema_and_table):
     query = 'DROP TABLE IF EXISTS {}'.format(schema_and_table)
-    log.info('drop table query: {}'.format(query))
+    log.debug('drop table query: {}'.format(query))
     return query
 
 

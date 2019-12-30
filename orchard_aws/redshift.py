@@ -18,7 +18,6 @@ class Redshift(object):
     """This class is the main driver for interacting with a redshift instance.
 
     TODO:
-        - Logger
         - Do we need to lock tables when we upsert? See generate_lock_query()
         - Write 'grant' permissions functions to run after upserts
         - Create util function to clean up old S3 files
@@ -55,7 +54,7 @@ class Redshift(object):
         try:
             self.conn = self.connect()
         except (Exception, psycopg2.Error) as error:
-            log.info('Could not connect to {}. Trying once more.'.format(self.dbname))
+            log.error('Could not connect to {}. Trying once more.'.format(self.dbname))
             time.sleep(5)
             self.conn = self.connect()
 
@@ -116,7 +115,7 @@ class Redshift(object):
             cur.execute(query)
             self.conn.commit()
         except Exception as e:
-            log.info('Encountered an error while executing. Closing connection')
+            log.error('Encountered an error while executing. Closing connection')
             self.close()
             raise
         finally:
@@ -231,12 +230,12 @@ class Redshift(object):
         # Copy s3 file into temp table
         temp_s3_path = "{}/{}".format(self.s3_conn.bucket, key)
         temp_copy_parameters = ["CSV DELIMITER AS ',' NULL AS 'NaN' BLANKSASNULL", "COMPUPDATE OFF"]
-        log.info('Copying {} into {}'.format(temp_s3_path, temp_table))
+        log.debug('Copying {} into {}'.format(temp_s3_path, temp_table))
         self.copy_from_s3(schema_and_table=temp_table, s3_path=temp_s3_path, extra_params=temp_copy_parameters)
 
         # upsert temp table into prod table
         self.upsert(source=temp_table, dest=schema_and_table, primary_keys=primary_keys)
-        log.info('Dropping temp table {}'.format(temp_table))
+        log.debug('Dropping temp table {}'.format(temp_table))
         drop_temp_table_query = get_drop_table_query(temp_table)
         self.execute(drop_temp_table_query)
 
@@ -288,7 +287,7 @@ class Redshift(object):
 
         # create temp staging table
         temp_table_query = get_create_temp_staging_table_query(temp_table, schema_and_table)
-        log.info('Creating temp staging table {}'.format(temp_table))
+        log.debug('Creating temp staging table {}'.format(temp_table))
         self.execute(temp_table_query)
         return temp_table
 
@@ -316,9 +315,9 @@ class Redshift(object):
                                                                     diststyle=diststyle,
                                                                     sortkey=sortkey)
         log.info(f'Creating schema and table: {schema_and_table}')
-        log.info(create_schema_query)
+        log.debug(create_schema_query)
         self.execute(create_schema_query)
-        log.info(create_table_query)
+        log.debug(create_table_query)
         self.execute(create_table_query)
 
     def generate_lock_query(self, table_list):
