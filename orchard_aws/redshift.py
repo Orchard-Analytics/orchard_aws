@@ -8,7 +8,10 @@ import uuid
 from .s3 import s3
 from .sql_generator import *
 
+
+logging.basicConfig(level=logging.DEBUG)
 log = logging.getLogger('Redshift Conn')
+
 
 
 class Redshift(object):
@@ -96,7 +99,7 @@ class Redshift(object):
             else:
                 return response
         except Exception as e:
-            log.info('Encountered an error while executing. Closing connection')
+            log.debug('Encountered an error while executing. Closing connection')
             self.close()
             raise
         finally:
