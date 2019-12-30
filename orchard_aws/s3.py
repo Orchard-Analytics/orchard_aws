@@ -28,8 +28,9 @@ class s3(object):
         try:
             key = self.csv_to_s3(data, obj_name, bucket, subdirectory, gzip)
             return key
+            raise Exception('Test Exception')
         except Exception:
-            log.info('error sending {0} to {1}/{2}'.format(obj_name, bucket, subdirectory))
+            log.error('error sending {0} to {1}/{2}'.format(obj_name, bucket, subdirectory))
             return None
 
     def csv_to_s3(self, data, obj_name, bucket=None, subdirectory=None, gzip=False):
