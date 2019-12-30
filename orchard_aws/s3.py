@@ -27,8 +27,8 @@ class s3(object):
         data = df.to_csv(index=False, encoding=encoding)
         try:
             key = self.csv_to_s3(data, obj_name, bucket, subdirectory, gzip)
-            return key
             raise Exception('Test Exception')
+            return key
         except Exception:
             log.error('error sending {0} to {1}/{2}'.format(obj_name, bucket, subdirectory))
             return None
