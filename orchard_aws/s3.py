@@ -6,7 +6,7 @@ import boto3
 import gzip
 from gzip import compress
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('S3 Conn')
 
 

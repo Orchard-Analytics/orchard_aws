@@ -9,7 +9,7 @@ from .s3 import s3
 from .sql_generator import *
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('Redshift Conn')
 
 
@@ -74,7 +74,7 @@ class Redshift(object):
         return self.conn
 
     def close(self):
-        log.debug('Closing redshift connection')
+        log.info('Closing redshift connection')
         self.conn.close()
 
     def execute_and_fetch(self, query, return_dataframe=False, return_json=False):
@@ -99,7 +99,7 @@ class Redshift(object):
             else:
                 return response
         except Exception as e:
-            log.debug('Encountered an error while executing. Closing connection')
+            log.info('Encountered an error while executing. Closing connection')
             self.close()
             raise
         finally:

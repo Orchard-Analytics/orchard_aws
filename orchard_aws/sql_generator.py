@@ -4,7 +4,7 @@ from .string_utils import *
 import yaml
 from . import config
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('SQL Generator')
 
 
