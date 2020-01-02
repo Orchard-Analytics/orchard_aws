@@ -9,5 +9,5 @@ setup(name='orchard_aws',
       author_email='ryantbrennan1@gmail.com',
       python_requires='>=3',
       install_requires=['pandas', 'numpy', 'psycopg2-binary', 'boto3', 'pyyaml'],
-      package_data={'': '*.yaml'},
+      package_data={'': ['*.yaml']},
       include_package_data=True)
