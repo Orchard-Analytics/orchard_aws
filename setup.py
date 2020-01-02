@@ -1,8 +1,8 @@
-from setuptools import setup
+from setuptools import setup, findpackages
 
 setup(name='orchard_aws',
       url='https://github.com/Orchard-Analytics/orchard_aws',
-      packages=['orchard_aws'],
+      packages=findpackages(),
       version='0.25',
       description='Orchad Analytics package for interacting with AWS.',
       author='Ryan Brennan',
