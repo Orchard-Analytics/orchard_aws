@@ -179,7 +179,6 @@ class Redshift(object):
         table = schema_and_table.split('.')[1]
         csv_name = '{}-{}.csv'.format(table, uuid.uuid4())
         log.info('Uploaded {} to s3 directory {}'.format(csv_name, subdirectory))
-        print(csv_name)
         key = self.s3_conn.df_to_s3(df, csv_name, bucket=bucket, subdirectory=subdirectory, encoding=encoding)
         df = None
 
@@ -218,6 +217,7 @@ class Redshift(object):
                                       sortkey=sortkey)
         log.info('Performing Upsert')
         self.upsert_from_s3(schema_and_table, key, bucket, primary_keys)
+        log.info('Done Upserting into Redshift')
 
     def upsert_from_s3(self, schema_and_table, key, bucket, primary_keys):
         """
