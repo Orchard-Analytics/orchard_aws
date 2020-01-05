@@ -79,6 +79,18 @@ class s3(object):
         data = self.client.get_object(Bucket=bucket, Key=key)
         return data
 
+    def from_s3(self, key, bucket=None):
+        if bucket is None:
+            bucket = self.bucket
+        data = self.client.get_object(Bucket=bucket, Key=key)
+        return data['Body']
+
+    def to_s3(self, data, key, bucket=None):
+        if bucket is None:
+            bucket = self.bucket
+        self.client.put_object(Body=data, Bucket=bucket, Key=key)
+        return key
+
     def delete_file(self, key, bucket=None):
         if bucket is None:
             bucket = self.bucket
