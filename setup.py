@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(name='orchard_aws',
       url='https://github.com/Orchard-Analytics/orchard_aws',
       packages=find_packages(),
-      version='0.26',
+      version='0.27',
       description='Orchad Analytics package for interacting with AWS.',
       author='Ryan Brennan',
       author_email='ryantbrennan1@gmail.com',
