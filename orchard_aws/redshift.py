@@ -176,6 +176,20 @@ class Redshift(object):
         """
         if load_type == 'incremental' and primary_keys == []:
             raise Exception('Must pass primary keys for incremental loads.')
+
+        # drop table when full refresh
+        if load_type == 'full-refresh':
+            drop_table_query = get_drop_table_query(schema_and_table)
+            self.execute(drop_table_query)
+
+        # create empty table
+        if not self.check_table_exists(schema_and_table=schema_and_table):
+            self.create_table_from_df(schema_and_table=schema_and_table,
+                                      df=df,
+                                      diststyle=diststyle,
+                                      sortkey=sortkey)
+
+        # upload df to s3
         table = schema_and_table.split('.')[1]
         csv_name = '{}-{}.csv'.format(table, uuid.uuid4())
         log.info('Uploaded {} to s3 directory {}'.format(csv_name, subdirectory))
@@ -205,16 +219,7 @@ class Redshift(object):
                        diststyle='auto',
                        encoding='utf-8'):
 
-        if load_type == 'full-refresh':
-            drop_table_query = get_drop_table_query(schema_and_table)
-            self.execute(drop_table_query)
-
         df = self.s3_conn.s3_to_df(bucket=bucket, key=key)
-        if not self.check_table_exists(schema_and_table=schema_and_table):
-            self.create_table_from_df(schema_and_table=schema_and_table,
-                                      df=df,
-                                      diststyle=diststyle,
-                                      sortkey=sortkey)
         log.info('Performing Upsert')
         self.upsert_from_s3(schema_and_table, key, bucket, primary_keys)
         log.info('Done Upserting into Redshift')
