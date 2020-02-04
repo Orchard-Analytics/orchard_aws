@@ -219,7 +219,6 @@ class Redshift(object):
                        diststyle='auto',
                        encoding='utf-8'):
 
-        df = self.s3_conn.s3_to_df(bucket=bucket, key=key)
         log.info('Performing Upsert')
         self.upsert_from_s3(schema_and_table, key, bucket, primary_keys)
         log.info('Done Upserting into Redshift')
