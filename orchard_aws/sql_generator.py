@@ -132,9 +132,9 @@ def get_table_config_string(diststyle, sortkey):
     """
     config = ''
     if diststyle is not None:
-        config + 'diststyle {}'.format(diststyle)
+        config = config + 'diststyle {} '.format(diststyle)
     if sortkey is not None:
-        config + 'sortkey({})'.format(sortkey)
+        config = config + 'sortkey({})'.format(sortkey)
     return config
 
 
