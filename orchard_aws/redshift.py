@@ -8,10 +8,7 @@ import uuid
 from .s3 import s3
 from .sql_generator import *
 
-
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('Redshift Conn')
-
 
 
 class Redshift(object):
@@ -43,8 +40,15 @@ class Redshift(object):
         Name of S3 bucket.
 
     """
-
-    def __init__(self, dbname, host, port, user, password, access_key=None, secret_key=None, s3_bucket=None):
+    def __init__(self,
+                 dbname,
+                 host,
+                 port,
+                 user,
+                 password,
+                 access_key=None,
+                 secret_key=None,
+                 s3_bucket=None):
         self.dbname = dbname
         self.host = host
         self.port = port
@@ -54,12 +58,15 @@ class Redshift(object):
         try:
             self.conn = self.connect()
         except (Exception, psycopg2.Error) as error:
-            log.error('Could not connect to {}. Trying once more.'.format(self.dbname))
+            log.error('Could not connect to {}. Trying once more.'.format(
+                self.dbname))
             time.sleep(5)
             self.conn = self.connect()
 
         if access_key is not None:
-            self.s3_conn = s3(access_key=access_key, secret_key=secret_key, bucket=s3_bucket)
+            self.s3_conn = s3(access_key=access_key,
+                              secret_key=secret_key,
+                              bucket=s3_bucket)
 
     def connect(self):
         """
@@ -76,7 +83,10 @@ class Redshift(object):
         log.info('Closing redshift connection')
         self.conn.close()
 
-    def execute_and_fetch(self, query, return_dataframe=False, return_json=False):
+    def execute_and_fetch(self,
+                          query,
+                          return_dataframe=False,
+                          return_json=False):
         """
             Returns results from a query in either json or a dataframe.
         """
@@ -88,17 +98,21 @@ class Redshift(object):
             if cur is not None:
                 cur.close()
             if return_dataframe == return_json:
-                raise Exception('return_dataframe and return_json are mutually exclusive.')
+                raise Exception(
+                    'return_dataframe and return_json are mutually exclusive.')
             if return_dataframe is True:
                 columns = [column[0] for column in cur.description]
                 return pd.DataFrame(resp, columns=columns)
             elif return_json is True:
                 columns = [column[0] for column in cur.description]
-                return json.loads(pd.DataFrame(resp, columns=columns).to_json(orient='records'))
+                return json.loads(
+                    pd.DataFrame(resp,
+                                 columns=columns).to_json(orient='records'))
             else:
                 return response
         except Exception as e:
-            log.info('Encountered an error while executing. Closing connection')
+            log.info(
+                'Encountered an error while executing. Closing connection')
             self.close()
             raise
         finally:
@@ -115,7 +129,8 @@ class Redshift(object):
             cur.execute(query)
             self.conn.commit()
         except Exception as e:
-            log.error('Encountered an error while executing. Closing connection')
+            log.error(
+                'Encountered an error while executing. Closing connection')
             self.close()
             raise
         finally:
@@ -192,8 +207,13 @@ class Redshift(object):
         # upload df to s3
         table = schema_and_table.split('.')[1]
         csv_name = '{}-{}.csv'.format(table, uuid.uuid4())
-        log.info('Uploaded {} to s3 directory {}'.format(csv_name, subdirectory))
-        key = self.s3_conn.df_to_s3(df, csv_name, bucket=bucket, subdirectory=subdirectory, encoding=encoding)
+        log.info('Uploaded {} to s3 directory {}'.format(
+            csv_name, subdirectory))
+        key = self.s3_conn.df_to_s3(df,
+                                    csv_name,
+                                    bucket=bucket,
+                                    subdirectory=subdirectory,
+                                    encoding=encoding)
         df = None
 
         # populate the table from the data in s3
@@ -233,12 +253,18 @@ class Redshift(object):
 
         # Copy s3 file into temp table
         temp_s3_path = "{}/{}".format(self.s3_conn.bucket, key)
-        temp_copy_parameters = ["CSV DELIMITER AS ',' NULL AS 'NaN' BLANKSASNULL", "COMPUPDATE OFF"]
+        temp_copy_parameters = [
+            "CSV DELIMITER AS ',' NULL AS 'NaN' BLANKSASNULL", "COMPUPDATE OFF"
+        ]
         log.debug('Copying {} into {}'.format(temp_s3_path, temp_table))
-        self.copy_from_s3(schema_and_table=temp_table, s3_path=temp_s3_path, extra_params=temp_copy_parameters)
+        self.copy_from_s3(schema_and_table=temp_table,
+                          s3_path=temp_s3_path,
+                          extra_params=temp_copy_parameters)
 
         # upsert temp table into prod table
-        self.upsert(source=temp_table, dest=schema_and_table, primary_keys=primary_keys)
+        self.upsert(source=temp_table,
+                    dest=schema_and_table,
+                    primary_keys=primary_keys)
         log.debug('Dropping temp table {}'.format(temp_table))
         drop_temp_table_query = get_drop_table_query(temp_table)
         self.execute(drop_temp_table_query)
@@ -253,24 +279,31 @@ class Redshift(object):
         if primary_keys:
             delete_dest_rows_query = get_delete_from_dest_using_source_query(
                 source, dest, primary_keys)
-            log.info('Deleting records from {} using: {}'.format(dest, primary_keys))
+            log.info('Deleting records from {} using: {}'.format(
+                dest, primary_keys))
             self.execute(delete_dest_rows_query)
 
         log.info('Inserting records from {}'.format(source))
-        insert_rows_from_source_query = get_insert_from_source_into_dest_query(source, dest)
+        insert_rows_from_source_query = get_insert_from_source_into_dest_query(
+            source, dest)
         self.execute(insert_rows_from_source_query)
 
-    def copy_from_s3(self, schema_and_table, s3_path, extra_params, columns=''):
+    def copy_from_s3(self,
+                     schema_and_table,
+                     s3_path,
+                     extra_params,
+                     columns=''):
         """
             Executes a copy statement to load s3 into a redshift table. Note, this copies all columns by default.
         """
         copy_query = get_copy_from_s3_query(schema_and_table=schema_and_table,
-                                                          columns=columns,
-                                                          s3_path=s3_path,
-                                                          extra_params=extra_params)
+                                            columns=columns,
+                                            s3_path=s3_path,
+                                            extra_params=extra_params)
         log.debug('Copy query:\n{}'.format(copy_query))
-        copy_query_with_creds = copy_query.format(access_key=self.s3_conn.access_key,
-                                                  secret_key=self.s3_conn.secret_key)
+        copy_query_with_creds = copy_query.format(
+            access_key=self.s3_conn.access_key,
+            secret_key=self.s3_conn.secret_key)
         self.execute(copy_query_with_creds)
 
     def create_temp_staging_table(self, schema_and_table):
@@ -290,12 +323,16 @@ class Redshift(object):
         self.execute(drop_temp_table_query)
 
         # create temp staging table
-        temp_table_query = get_create_temp_staging_table_query(temp_table, schema_and_table)
+        temp_table_query = get_create_temp_staging_table_query(
+            temp_table, schema_and_table)
         log.debug('Creating temp staging table {}'.format(temp_table))
         self.execute(temp_table_query)
         return temp_table
 
-    def check_table_exists(self, schema_and_table=None, schema=None, table=None):
+    def check_table_exists(self,
+                           schema_and_table=None,
+                           schema=None,
+                           table=None):
         """
             Returns
             -------
@@ -307,17 +344,23 @@ class Redshift(object):
         resp = self.execute_and_fetch(query, return_json=True)
         return resp[0]['count'] > 0
 
-    def create_table_from_df(self, schema_and_table, df, diststyle, sortkey, add_updated_column=False):
+    def create_table_from_df(self,
+                             schema_and_table,
+                             df,
+                             diststyle,
+                             sortkey,
+                             add_updated_column=False):
         """
             Creates a schema if the schema does not already exist and creates an empty table based on a df.
         """
         schema = schema_and_table.split('.')[0]
         create_schema_query = get_create_schema_query(schema)
-        create_table_query = create_table_ddl_from_df(schema_and_table,
-                                                                    df,
-                                                                    add_updated_column=add_updated_column,
-                                                                    diststyle=diststyle,
-                                                                    sortkey=sortkey)
+        create_table_query = create_table_ddl_from_df(
+            schema_and_table,
+            df,
+            add_updated_column=add_updated_column,
+            diststyle=diststyle,
+            sortkey=sortkey)
         log.info(f'Creating schema and table: {schema_and_table}')
         log.debug(create_schema_query)
         self.execute(create_schema_query)
@@ -325,7 +368,9 @@ class Redshift(object):
         self.execute(create_table_query)
 
     def generate_lock_query(self, table_list):
-        existing_tables = [table for table in table_list if self.check_table_exists(table)]
+        existing_tables = [
+            table for table in table_list if self.check_table_exists(table)
+        ]
         if existing_tables:
             return 'LOCK {};'.format(','.join(existing_tables))
         else:

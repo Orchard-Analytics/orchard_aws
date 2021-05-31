@@ -6,7 +6,6 @@ import boto3
 import gzip
 from gzip import compress
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('S3 Conn')
 
 
@@ -14,7 +13,6 @@ class s3(object):
     """
         This class reads and writes to S3.
     """
-
     def __init__(self, access_key, secret_key, bucket=None):
         self.access_key = access_key
         self.secret_key = secret_key
@@ -23,16 +21,28 @@ class s3(object):
                                    aws_access_key_id=self.access_key,
                                    aws_secret_access_key=self.secret_key)
 
-    def df_to_s3(self, df, obj_name, bucket=None, subdirectory=None, gzip=False, encoding='utf-8'):
-        data = df.to_csv(index=False, encoding=encoding)
+    def df_to_s3(self,
+                 df,
+                 obj_name,
+                 bucket=None,
+                 subdirectory=None,
+                 gzip=False,
+                 encoding='utf-8'):
+        data = df.to_csv(index=False, encoding=encosding)
         try:
             key = self.csv_to_s3(data, obj_name, bucket, subdirectory, gzip)
             return key
         except Exception:
-            log.error('error sending {0} to {1}/{2}'.format(obj_name, bucket, subdirectory))
+            log.error('error sending {0} to {1}/{2}'.format(
+                obj_name, bucket, subdirectory))
             return None
 
-    def csv_to_s3(self, data, obj_name, bucket=None, subdirectory=None, gzip=False):
+    def csv_to_s3(self,
+                  data,
+                  obj_name,
+                  bucket=None,
+                  subdirectory=None,
+                  gzip=False):
         if bucket is None:
             bucket = self.bucket
         if gzip:

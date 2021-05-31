@@ -4,7 +4,6 @@ from .string_utils import *
 import yaml
 from . import config
 
-logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('SQL Generator')
 
 
@@ -18,7 +17,10 @@ def get_table_exists_query(schema, table):
     return query
 
 
-def get_copy_from_s3_query(schema_and_table, columns, s3_path, extra_params=[]):
+def get_copy_from_s3_query(schema_and_table,
+                           columns,
+                           s3_path,
+                           extra_params=[]):
     if not extra_params:
         extra_params = ''
     else:
@@ -58,9 +60,12 @@ def get_delete_from_dest_using_source_query(source, dest, primary_keys):
     """
     where_clause = 'where 1=1 '
     for key in primary_keys:
-        where_clause += 'and {source}."{key}" = {dest}."{key}" '.format(source=source, dest=dest, key=key)
+        where_clause += 'and {source}."{key}" = {dest}."{key}" '.format(
+            source=source, dest=dest, key=key)
     query = '''delete from {dest} using {source}
-        {where_clause}'''.format(dest=dest, source=source, where_clause=where_clause)
+        {where_clause}'''.format(dest=dest,
+                                 source=source,
+                                 where_clause=where_clause)
     log.debug('delete from dest using source query:\n{}'.format(query))
     return query
 
@@ -83,7 +88,8 @@ def get_drop_table_query(schema_and_table):
 
 
 def get_create_temp_staging_table_query(temp_table, schema_and_table):
-    query = 'CREATE TEMP TABLE {} (LIKE {} INCLUDING DEFAULTS)'.format(temp_table, schema_and_table)
+    query = 'CREATE TEMP TABLE {} (LIKE {} INCLUDING DEFAULTS)'.format(
+        temp_table, schema_and_table)
     log.debug('create temp table query:\n{}'.format(query))
     return query
 
@@ -146,7 +152,11 @@ def get_ddl_base_string(add_updated_column):
     return base
 
 
-def create_table_ddl_from_df(schema_and_table, df, add_updated_column=False, diststyle='auto', sortkey=None):
+def create_table_ddl_from_df(schema_and_table,
+                             df,
+                             add_updated_column=False,
+                             diststyle='auto',
+                             sortkey=None):
     """
         Tales a schema.table and a dataframe and returns a ddl (create table) statement.
 
@@ -166,6 +176,7 @@ def create_table_ddl_from_df(schema_and_table, df, add_updated_column=False, dis
     ddl_string = get_ddl_string(df)
     base_string = get_ddl_base_string(add_updated_column)
     table_config_string = get_table_config_string(diststyle, sortkey)
-    create_table_ddl = base_string % (schema_and_table, ddl_string, table_config_string)
+    create_table_ddl = base_string % (schema_and_table, ddl_string,
+                                      table_config_string)
     log.info('create table ddl: {}'.format(create_table_ddl))
     return create_table_ddl
