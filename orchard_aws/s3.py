@@ -28,7 +28,7 @@ class s3(object):
                  subdirectory=None,
                  gzip=False,
                  encoding='utf-8'):
-        data = df.to_csv(index=False, encoding=encosding)
+        data = df.to_csv(index=False, encoding=encoding)
         try:
             key = self.csv_to_s3(data, obj_name, bucket, subdirectory, gzip)
             return key
