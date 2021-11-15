@@ -4,7 +4,7 @@ setup(
     name='orchard_aws',
     url='https://github.com/Orchard-Analytics/orchard_aws',
     packages=find_packages(),
-    version='1.0',
+    version='1.1',
     description='Orchad Analytics package for interacting with AWS.',
     author='Ryan Brennan',
     author_email='ryantbrennan1@gmail.com',
